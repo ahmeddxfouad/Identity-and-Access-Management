@@ -1,87 +1,64 @@
 # Coffee Shop Backend
 
-## Getting Started
+Flask API that serves drinks and recipes with **Auth0 JWT + RBAC**.
 
-### Installing Dependencies
-
-#### Python 3.7
-
-Follow instructions to install the latest version of python for your platform in the [python docs](https://docs.python.org/3/using/unix.html#getting-and-installing-the-latest-version-of-python)
-
-#### Virtual Environment
-
-We recommend working within a virtual environment whenever using Python for projects. This keeps your dependencies for each project separate and organized. Instructions for setting up a virtual environment for your platform can be found in the [python docs](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
-
-#### PIP Dependencies
-
-Once you have your virtual environment setup and running, install dependencies by naviging to the `/backend` directory and running:
+## Run
 
 ```bash
+cd backend
+python3 -m venv env && source env/bin/activate      # Windows: py -m venv env && .\env\Scripts\Activate.ps1
 pip install -r requirements.txt
-```
-
-This will install all of the required packages we selected within the `requirements.txt` file.
-
-##### Key Dependencies
-
-- [Flask](http://flask.pocoo.org/) is a lightweight backend microservices framework. Flask is required to handle requests and responses.
-
-- [SQLAlchemy](https://www.sqlalchemy.org/) and [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/en/2.x/) are libraries to handle the lightweight sqlite database. Since we want you to focus on auth, we handle the heavy lift for you in `./src/database/models.py`. We recommend skimming this code first so you know how to interface with the Drink model.
-
-- [jose](https://python-jose.readthedocs.io/en/latest/) JavaScript Object Signing and Encryption for JWTs. Useful for encoding, decoding, and verifying JWTS.
-
-## Running the server
-
-From within the `./src` directory first ensure you are working using your created virtual environment.
-
-Each time you open a new terminal session, run:
-
-```bash
-export FLASK_APP=api.py;
-```
-
-To run the server, execute:
-
-```bash
+export FLASK_APP=api.py
+export AUTH0_DOMAIN="YOUR_TENANT.eu.auth0.com"
+export API_AUDIENCE="coffeeshop"                    # must match your Auth0 API Identifier
+export ALGORITHMS="RS256"
+cd src
+# First run only: uncomment db_drop_and_create_all() in api.py to seed, then re-comment.
 flask run --reload
 ```
 
-The `--reload` flag will detect file changes and restart the server automatically.
+## Environment Variables
+- `AUTH0_DOMAIN` – e.g., `dev-ahmeddxfouad.eu.auth0.com`
+- `API_AUDIENCE` – must equal your Auth0 API Identifier (e.g., `coffeeshop`)
+- `ALGORITHMS` – `RS256`
 
-## Tasks
+## Endpoints
+- `GET /drinks` (public) → short representation
+- `GET /drinks-detail` (requires `get:drinks-detail`) → long representation
+- `POST /drinks` (requires `post:drinks`) → returns new drink (long)
+- `PATCH /drinks/<id>` (requires `patch:drinks`) → returns updated drink (long)
+- `DELETE /drinks/<id>` (requires `delete:drinks`) → returns deleted id
 
-### Setup Auth0
+### Response Examples
 
-1. Create a new Auth0 Account
-2. Select a unique tenant domain
-3. Create a new, single page web application
-4. Create a new API
-   - in API Settings:
-     - Enable RBAC
-     - Enable Add Permissions in the Access Token
-5. Create new API permissions:
-   - `get:drinks`
-   - `get:drinks-detail`
-   - `post:drinks`
-   - `patch:drinks`
-   - `delete:drinks`
-6. Create new roles for:
-   - Barista
-     - can `get:drinks-detail`
-     - can `get:drinks`
-   - Manager
-     - can perform all actions
-7. Test your endpoints with [Postman](https://getpostman.com).
-   - Register 2 users - assign the Barista role to one and Manager role to the other.
-   - Sign into each account and make note of the JWT.
-   - Import the postman collection `./starter_code/backend/udacity-fsnd-udaspicelatte.postman_collection.json`
-   - Right-clicking the collection folder for barista and manager, navigate to the authorization tab, and including the JWT in the token field (you should have noted these JWTs).
-   - Run the collection and correct any errors.
-   - Export the collection overwriting the one we've included so that we have your proper JWTs during review!
+**GET /drinks**
+```json
+{
+  "success": true,
+  "drinks": [
+    { "id": 1, "title": "Cappuccino", "recipe": [{ "color": "#a67c52", "parts": 1 }] }
+  ]
+}
+```
 
-### Implement The Server
+**Errors**
+```json
+{ "success": false, "error": 401, "message": "unauthorized" }
+{ "success": false, "error": 403, "message": "permission not found" }
+{ "success": false, "error": 404, "message": "resource not found" }
+{ "success": false, "error": 422, "message": "unprocessable" }
+```
 
-There are `@TODO` comments throughout the `./backend/src`. We recommend tackling the files in order and from top to bottom:
+## Auth
 
-1. `./src/auth/auth.py`
-2. `./src/api.py`
+`src/auth/auth.py` implements:
+- `get_token_auth_header()` – extracts `Bearer <JWT>`
+- `verify_decode_jwt(token)` – fetches JWKS, verifies RS256, audience/issuer
+- `check_permissions(permission, payload)` – ensures permissions claim includes required scope
+- `@requires_auth("scope")` – route decorator
+
+## Data Model
+`src/database/models.py` contains `Drink` with `insert()`, `update()`, `delete()`, `short()`, `long()` helpers.
+
+## CORS
+`flask-cors` is enabled; ensure headers `Content-Type, Authorization` and methods `GET,POST,PATCH,DELETE,OPTIONS` are allowed.
