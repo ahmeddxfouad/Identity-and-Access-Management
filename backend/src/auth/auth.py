@@ -3,11 +3,14 @@ from flask import request
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
+import os
+from dotenv import load_dotenv, find_dotenv
+load_dotenv()
 
-AUTH0_DOMAIN = 'dev-ahmeddxfouad.eu.auth0.com'
-ALGORITHMS = ['RS256']
-API_AUDIENCE = 'coffeeshop'
-
+# Read env that api.py already loaded
+AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN", "dev-ahmeddxfouad.eu").strip()+".auth0.com"
+API_AUDIENCE = os.getenv("API_AUDIENCE", "coffeeshop").strip()
+ALGORITHMS = os.getenv("ALGORITHMS", "RS256").split(",")
 
 # ---------------------------
 # AuthError Exception

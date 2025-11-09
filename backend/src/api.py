@@ -11,6 +11,8 @@ app = Flask(__name__)
 setup_db(app)
 CORS(app)
 
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv(".env"), override=True)
 
 # Optional: set CORS headers explicitly
 @app.after_request
